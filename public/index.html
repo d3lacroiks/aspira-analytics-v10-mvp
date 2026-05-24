@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASPIRA Analytics — MVP (Protocolo ASPIRA v10)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0b1220;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+    #splash img {
+      width: 1772px;
+      height: 1772px;
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      animation: splashPulse 1.2s ease-in-out;
+    }
+    @keyframes splashPulse {
+      0%   { opacity: 0; transform: scale(0.92); }
+      50%  { opacity: 1; transform: scale(1.03); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    #splash.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+</head>
+<body>
+  <!-- Splash Screen -->
+  <div id="splash">
+    <img src="/icons/icon-512.png" alt="ASPIRA Analytics" />
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandTitle">ASPIRA Analytics — MVP (Protocolo ASPIRA v10)</div>
+      <div class="brandSub">PARTE I — Obra · PARTE II — Aplicación del Protocolo · Guardado local en tu navegador</div>
+    </div>
+    <div class="topActions">
+      <button id="btnNewWork" class="btn ghost">Nueva obra</button>
+      <button id="btnLibrary" class="btn ghost">Obras</button>
+      <button id="btnReport" class="btn primary">Generar informe</button>
+      <button id="btnHelp" class="btn ghost">Ayuda</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: PARTE I -->
+    <section class="panel left">
+      <div class="panelTitle">PARTE I — Obra</div>
+      <div class="panelHint">
+        Registra la ficha técnica una sola vez. En PARTE II podrás consultarla en modo solo lectura.
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Imagen (archivo)</div>
+        <input id="inpImage" type="file" accept="image/*" />
+        <div class="imgWrap">
+          <img id="imgPreview" alt="" />
+          <div id="imgEmpty" class="imgEmpty">Sube una imagen (JPG/PNG/WebP)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="grid2">
+          <div class="field">
+            <label>Artista</label>
+            <input id="metaArtist" placeholder="Graciela Arias (ej.)" />
+          </div>
+          <div class="field">
+            <label>Título</label>
+            <input id="metaTitle" placeholder="Ikarando Vida (ej.)" />
+          </div>
+
+          <div class="field">
+            <label>Año</label>
+            <input id="metaYear" placeholder="2016" />
+          </div>
+          <div class="field">
+            <label>Serie / Proyecto</label>
+            <input id="metaSeries" placeholder="Cosmo / Trayectoria BCR" />
+          </div>
+
+          <div class="field">
+            <label>Técnica / soporte (opcional)</label>
+            <input id="metaTechnique" placeholder="Óleo / acrílico sobre lienzo" />
+          </div>
+          <div class="field">
+            <label>Medidas (opcional)</label>
+            <input id="metaMeasures" placeholder="20 x 20 cm" />
+          </div>
+
+          <div class="field full">
+            <label>Procedencia / fuente</label>
+            <input id="metaSource" placeholder="Archivo personal / catálogo / URL" />
+          </div>
+
+          <div class="field full">
+            <label>Notas rápidas (opcional)</label>
+            <textarea id="metaNotes" rows="3" placeholder="Contexto breve: encargo, post-incendio, concurso, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btnSaveWork" class="btn primary">Guardar obra</button>
+          <div class="smallmuted">Tip: <b>Ctrl + S</b> también guarda.</div>
+        </div>
+      </div>
+
+      <div class="smallmuted footnote">
+        <b>Ficha técnica repetida “dos veces” (sin duplicar):</b><br/>
+        En el protocolo, la ficha se registra en PARTE I y en el Paso 1 se consulta en solo lectura y se añaden metadatos extendidos / verificación.
+      </div>
+    </section>
+
+    <!-- CENTER: PARTE II -->
+    <section class="panel center">
+      <div class="panelHead">
+        <div>
+          <div class="panelTitle">PARTE II — Pasos (v10)</div>
+          <div class="panelHint">Aplica el protocolo paso a paso. Guarda cada paso. Vincula motivos en el Archivo Onírico.</div>
+        </div>
+        <div class="pill" id="workPill">Obra: —</div>
+      </div>
+
+      <div class="centerGrid">
+        <aside class="steps card">
+          <div class="stepsTitle">Pasos</div>
+          <div id="stepsList" class="stepsList"></div>
+        </aside>
+
+        <section class="stepMain card">
+          <div class="stepTop">
+            <div>
+              <div id="stepTitle" class="stepTitle">Paso 1 — Preámbulo (Ficha técnica)</div>
+              <div id="stepSub" class="smallmuted">Identificación estable de la obra. En el MVP se registra en PARTE I y aquí se consulta en solo lectura.</div>
+            </div>
+            <div class="progress" id="progressText">0/10</div>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Ficha base (solo lectura)</div>
+            <div id="baseSheet" class="baseSheet"></div>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Metadatos extendidos (si aplica)</div>
+            <textarea id="metaExtended" rows="3" placeholder="Encargo, institución, condición de producción, etc."></textarea>
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Fuentes / verificación</div>
+            <input id="stepSources" placeholder="Autor-año-página / URL / catálogo" />
+          </div>
+
+          <div class="block">
+            <div class="blockTitle">Observaciones / desarrollo</div>
+            <textarea id="stepText" rows="9" placeholder="Escribe tu análisis del paso..."></textarea>
+          </div>
+
+          <div class="twoCols">
+            <div class="block">
+              <div class="blockTitle">Evidencias (lista breve)</div>
+              <textarea id="stepEvidence" rows="4" placeholder="- Evidencia 1&#10;- Evidencia 2"></textarea>
+            </div>
+            <div class="block">
+              <div class="blockTitle">Citas / fuentes (manual)</div>
+              <textarea id="stepCites" rows="4" placeholder="Autor, año, página / entrevista / archivo..."></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <div class="navBtns">
+              <button id="btnPrev" class="btn ghost">◀ Anterior</button>
+              <button id="btnNext" class="btn ghost">Siguiente ▶</button>
+            </div>
+            <div class="saveBtns">
+              <button id="btnSaveStep" class="btn primary">Guardar paso</button>
+              <button id="btnViewBase" class="btn ghost">Ver ficha base</button>
+              <button id="btnAssist" class="btn ghost">Asistencia IA (este paso)</button>
+            </div>
+          </div>
+
+          <div class="smallmuted warn" id="iaWarn">
+            La asistencia IA es opcional. Puede fallar o no reconocer correctamente iconografía amazónica. Verifica y corrige según tu criterio.
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- RIGHT: Archivo Onírico -->
+    <section class="panel right">
+      <div class="panelTitle">Archivo Onírico</div>
+      <div class="panelHint">
+        Motivos recurrentes + autor/a de registro. Puedes vincularlos a pasos (2/4/8 recomendado) y se listan abajo.
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>Buscar motivo</label>
+          <input id="motifSearch" placeholder="jaguar, serpiente, kené..." />
+        </div>
+
+        <button id="btnToggleMotifForm" class="btn ghost full">+ Agregar motivo y autor/a del motivo onírico</button>
+
+        <div id="motifForm" class="motifForm hidden">
+          <div class="field">
+            <label>Motivo</label>
+            <input id="newMotifName" placeholder="Ej: Jaguar / Serpiente / Kené" />
+          </div>
+
+          <div class="field">
+            <label>Autor/a (quién registra el motivo)</label>
+            <input id="newMotifAuthor" placeholder="Ej: Juan Diego / Arias / Fuente X" />
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label>Tipo</label>
+              <select id="newMotifType">
+                <option value="objeto / agencia">objeto / agencia</option>
+                <option value="animal / poder">animal / poder</option>
+                <option value="vegetal / medicina">vegetal / medicina</option>
+                <option value="evento / memoria">evento / memoria</option>
+                <option value="patrón / kené">patrón / kené</option>
+                <option value="cuerpo / transformación">cuerpo / transformación</option>
+                <option value="atmósfera / luz">atmósfera / luz</option>
+                <option value="otro">otro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Aura (opcional)</label>
+              <input id="newMotifAura" placeholder="Ej: protector / amenaza" />
+            </div>
+          </div>
+
+          <button id="btnAddMotif" class="btn primary full">Añadir al archivo</button>
+        </div>
+
+        <div id="motifList" class="motifList"></div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Motivos vinculados a este paso</div>
+        <div id="linkedMotifs" class="linkedBox">Ninguno aún. (Usa “Vincular” en un motivo.)</div>
+      </div>
+
+      <div class="tipBox">
+        Sugerencia: vincula motivos en los pasos 2/4/8 y luego revisa patrones en el informe.
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal simple -->
+  <dialog id="dlg" class="dlg">
+    <div class="dlgInner">
+      <div class="dlgTitle" id="dlgTitle">Mensaje</div>
+      <div id="dlgBody" class="dlgBody"></div>
+      <div class="dlgActions">
+        <button id="dlgCancel" class="btn ghost">Cerrar</button>
+        <button id="dlgOk" class="btn primary">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+
+<dialog id="dlgLibrary" class="dlg">
+  <div class="dlgInner">
+    <div class="dlgTitle">Obras guardadas</div>
+    <div class="dlgBody">
+      <div class="smallmuted" style="margin-bottom:10px">
+        Se guardan localmente en este navegador. Puedes abrir, cambiar o eliminar una obra.
+      </div>
+      <div id="libraryList" class="libraryList"></div>
+    </div>
+    <div class="dlgActions">
+      <button id="btnCloseLibrary" class="btn ghost">Cerrar</button>
+    </div>
+  </div>
+</dialog>
+
+  <script defer src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splash');
+      setTimeout(() => {
+        splash.classList.add('hide');
+        setTimeout(() => splash.remove(), 650);
+      }, 1800);
+    });
+  </script>
+</body>
+</html>
