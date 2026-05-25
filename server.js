@@ -1,6 +1,6 @@
-
-import express from "express";
-import dotenv from "dotenv";
+const express = require("express");
+const dotenv = require("dotenv");
+const path = require("path");
 
 dotenv.config();
 
@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 8787;
 
 app.use(express.json({ limit: "30mb" }));
 app.use(express.urlencoded({ extended: true, limit: "30mb" }));
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
 const HF_API = "https://api-inference.huggingface.co/models";
 const HF_TOKEN = (process.env.HF_TOKEN || "").trim();

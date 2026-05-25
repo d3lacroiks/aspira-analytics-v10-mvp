@@ -1,13 +1,47 @@
 {
-  "name": "aspira-analytics-v10-mvp-ui2-plus",
-  "version": "0.2.0",
-  "type": "module",
+  "name": "aspira-analytics-v10-mvp",
+  "version": "1.0.0",
+  "description": "Herramienta de análisis para arte amazónico contemporáneo — Protocolo ASPIRA v10",
+  "type": "commonjs",
+  "main": "main.js",
   "private": true,
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "electron": "electron .",
+    "build": "electron-builder --win --x64",
+    "dist": "npm run build"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aspira.analytics",
+    "productName": "ASPIRA Analytics",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/icons/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.js",
+      "public/**/*",
+      "node_modules/**/*",
+      ".env"
+    ]
   }
 }

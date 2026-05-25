@@ -728,7 +728,16 @@ function bindUI() {
   $("btnNewWork")?.addEventListener("click", newWorkFlow);
   $("btnLibrary")?.addEventListener("click", openLibrary);
   $("btnCloseLibrary")?.addEventListener("click", closeLibrary);
-  $("btnReport")?.addEventListener("click", exportReport);
+
+  // Informe dropdown
+  $("btnReportHTML")?.addEventListener("click", () => { exportReport(); $("menuReport")?.classList.remove("open"); });
+  $("btnReportPDF")?.addEventListener("click",  () => { exportPDF();    $("menuReport")?.classList.remove("open"); });
+  $("btnReportWord")?.addEventListener("click", () => { exportWord();   $("menuReport")?.classList.remove("open"); });
+
+  // Exportar / importar datos
+  $("btnExportData")?.addEventListener("click", exportData);
+  $("btnImportData")?.addEventListener("click", () => $("inpImport")?.click());
+  $("inpImport")?.addEventListener("change", importData);
 
   $("btnHelp")?.addEventListener("click", () => {
     const txt = [
@@ -736,6 +745,15 @@ function bindUI() {
       "• PARTE I: registra imagen + ficha técnica (se guarda).",
       "• PARTE II: aplica pasos 1–10 y guarda cada paso.",
       "• Archivo Onírico: motivos globales con autor/a; vincúlalo por paso (2/4/8 recomendado).",
+      "",
+      "Informes:",
+      "• HTML: abre en navegador, guarda en Downloads.",
+      "• PDF: abre ventana de impresión → Guardar como PDF.",
+      "• Word: descarga .docx editable.",
+      "",
+      "Exportar / Importar datos:",
+      "• Exportar: descarga un .json con todo tu trabajo.",
+      "• Importar: carga ese .json en cualquier computadora.",
       "",
       "IA (opcional):",
       "• Si configuras HF_TOKEN, puedes pedir asistencia en pasos 2/4/5.",
@@ -769,6 +787,202 @@ function bindUI() {
     };
     reader.readAsDataURL(file);
   });
+}
+
+// ─── EXPORTAR DATOS (JSON) ───────────────────────────────────────────────────
+function exportData() {
+  const data = {
+    exportedAt: nowISO(),
+    appVersion: APP_VERSION,
+    library,
+    motifs,
+    currentId
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `aspira_datos_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Datos exportados correctamente.");
+}
+
+// ─── IMPORTAR DATOS (JSON) ───────────────────────────────────────────────────
+function importData(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data.library) throw new Error("Archivo inválido.");
+      showDialog("Importar datos", "¿Importar estos datos? Esto reemplazará tu biblioteca actual.", {
+        onOk: () => {
+          library = data.library;
+          motifs = data.motifs || defaultMotifs();
+          currentId = data.currentId || Object.keys(library)[0] || "";
+          saveJSON(LS_LIBRARY, library);
+          saveJSON(LS_MOTIFS, motifs);
+          localStorage.setItem(LS_CURRENT, currentId);
+          currentStep = 1;
+          renderAll();
+          toast("Datos importados correctamente.");
+        }
+      });
+    } catch {
+      toast("Error: archivo JSON inválido.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+// ─── EXPORTAR PDF (ventana de impresión) ─────────────────────────────────────
+function exportPDF() {
+  const w = getWork();
+  const m = w.meta || {};
+  const date = new Date().toLocaleString();
+  const stepsHtml = STEPS.map(s => {
+    const st = w.steps?.[s.n] || {};
+    return `
+      <div class="sec">
+        <h2>${escapeHtml(s.title)}</h2>
+        ${st.text ? `<p>${escapeHtml(st.text).replace(/\n/g,"<br/>")}</p>` : "<p class='muted'>Sin contenido.</p>"}
+        ${st.evidence ? `<div><b>Evidencias:</b><br/>${escapeHtml(st.evidence).replace(/\n/g,"<br/>")}</div>` : ""}
+        ${st.cites ? `<div><b>Citas:</b><br/>${escapeHtml(st.cites).replace(/\n/g,"<br/>")}</div>` : ""}
+      </div>`;
+  }).join("");
+
+  const win = window.open("", "_blank");
+  win.document.write(`<!doctype html><html><head>
+    <meta charset="utf-8"/>
+    <title>Informe ASPIRA — ${escapeHtml(m.title||"obra")}</title>
+    <style>
+      body{font:13px/1.5 Georgia,serif; margin:30px; color:#111;}
+      h1{font-size:20px; margin:0 0 4px;}
+      h2{font-size:15px; border-bottom:1px solid #ccc; padding-bottom:4px; margin:18px 0 8px;}
+      .muted{color:#777; font-style:italic;}
+      .sec{margin:14px 0;}
+      img{max-width:300px; border-radius:8px; border:1px solid #ddd;}
+      @media print { .noprint{display:none;} }
+    </style>
+  </head><body>
+    <h1>ASPIRA Analytics — Informe</h1>
+    <div class="muted">Generado: ${escapeHtml(date)} · ${escapeHtml(APP_VERSION)}</div>
+    <div class="sec">
+      <h2>Ficha técnica</h2>
+      <b>Artista:</b> ${escapeHtml(m.artist||"—")}<br/>
+      <b>Título:</b> ${escapeHtml(m.title||"—")}<br/>
+      <b>Año:</b> ${escapeHtml(m.year||"—")}<br/>
+      <b>Serie:</b> ${escapeHtml(m.series||"—")}<br/>
+      <b>Técnica:</b> ${escapeHtml(m.technique||"—")}<br/>
+      <b>Medidas:</b> ${escapeHtml(m.measures||"—")}<br/>
+      <b>Fuente:</b> ${escapeHtml(m.source||"—")}<br/>
+      ${w.imageDataUrl ? `<br/><img src="${w.imageDataUrl}" alt="obra"/>` : ""}
+    </div>
+    ${stepsHtml}
+    <div class="sec noprint" style="margin-top:24px; text-align:center;">
+      <button onclick="window.print()" style="padding:10px 24px; font-size:14px; cursor:pointer;">🖨️ Imprimir / Guardar como PDF</button>
+    </div>
+  </body></html>`);
+  win.document.close();
+}
+
+// ─── EXPORTAR WORD (.docx) ───────────────────────────────────────────────────
+async function exportWord() {
+  try {
+    const w = getWork();
+    const m = w.meta || {};
+    const date = new Date().toLocaleString();
+
+    if (typeof docx === "undefined") {
+      toast("Error: librería Word no cargada. Verifica tu conexión a internet.");
+      return;
+    }
+
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
+
+    const children = [];
+
+    // Título principal
+    children.push(new Paragraph({
+      text: "ASPIRA Analytics — Informe de análisis",
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER
+    }));
+    children.push(new Paragraph({
+      children: [new TextRun({ text: `Generado: ${date} · ${APP_VERSION}`, color: "777777", size: 20 })]
+    }));
+    children.push(new Paragraph({ text: "" }));
+
+    // Ficha técnica
+    children.push(new Paragraph({ text: "Ficha técnica (PARTE I)", heading: HeadingLevel.HEADING_1 }));
+    const fichaFields = [
+      ["Artista", m.artist], ["Título", m.title], ["Año", m.year],
+      ["Serie / Proyecto", m.series], ["Técnica / soporte", m.technique],
+      ["Medidas", m.measures], ["Procedencia / Fuente", m.source],
+      ["Notas", m.notes], ["Metadatos extendidos", w.metaExtended],
+      ["Fuentes / verificación", w.stepSources]
+    ];
+    for (const [label, val] of fichaFields) {
+      if (val) children.push(new Paragraph({
+        children: [
+          new TextRun({ text: `${label}: `, bold: true }),
+          new TextRun({ text: val || "—" })
+        ]
+      }));
+    }
+    children.push(new Paragraph({ text: "" }));
+
+    // Archivo Onírico
+    children.push(new Paragraph({ text: "Archivo Onírico (global)", heading: HeadingLevel.HEADING_1 }));
+    for (const mm of motifs) {
+      children.push(new Paragraph({
+        children: [
+          new TextRun({ text: `• ${mm.name}`, bold: true }),
+          new TextRun({ text: ` — ${mm.type} · autor/a: ${mm.author || "—"}${mm.aura ? ` · aura: ${mm.aura}` : ""}` })
+        ]
+      }));
+    }
+    children.push(new Paragraph({ text: "" }));
+
+    // Pasos
+    for (const s of STEPS) {
+      const st = w.steps?.[s.n] || {};
+      children.push(new Paragraph({ text: s.title, heading: HeadingLevel.HEADING_1 }));
+      if (st.text) {
+        children.push(new Paragraph({ children: [new TextRun({ text: "Observaciones:", bold: true })] }));
+        for (const line of st.text.split("\n")) {
+          children.push(new Paragraph({ text: line }));
+        }
+      }
+      if (st.evidence) {
+        children.push(new Paragraph({ children: [new TextRun({ text: "Evidencias:", bold: true })] }));
+        for (const line of st.evidence.split("\n")) {
+          children.push(new Paragraph({ text: line }));
+        }
+      }
+      if (st.cites) {
+        children.push(new Paragraph({ children: [new TextRun({ text: "Citas / fuentes:", bold: true })] }));
+        for (const line of st.cites.split("\n")) {
+          children.push(new Paragraph({ text: line }));
+        }
+      }
+      children.push(new Paragraph({ text: "" }));
+    }
+
+    const doc = new Document({ sections: [{ children }] });
+    const blob = await Packer.toBlob(doc);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const safe = (m.title || "obra").replace(/[^a-z0-9-_]+/gi, "_").slice(0, 60);
+    a.download = `informe_aspira_${safe || "obra"}.docx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("Informe Word generado correctamente.");
+  } catch (err) {
+    toast("Error al generar Word: " + String(err?.message || err));
+  }
 }
 
 function renderAll() {

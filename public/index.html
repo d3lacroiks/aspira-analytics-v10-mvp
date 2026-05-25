@@ -38,8 +38,36 @@
   <meta name="theme-color" content="#0b1220" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-</head>
-<body>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <style>
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: #0e1930;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 6px;
+      min-width: 180px;
+      z-index: 100;
+      box-shadow: 0 14px 40px rgba(0,0,0,.5);
+    }
+    .dropdown-menu.open { display: flex; flex-direction: column; gap: 4px; }
+    .dropdown-menu button {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      transition: background .15s;
+    }
+    .dropdown-menu button:hover { background: rgba(255,255,255,.08); }
+  </style>
 </head>
 <body>
   <!-- Splash Screen -->
@@ -55,7 +83,17 @@
     <div class="topActions">
       <button id="btnNewWork" class="btn ghost">Nueva obra</button>
       <button id="btnLibrary" class="btn ghost">Obras</button>
-      <button id="btnReport" class="btn primary">Generar informe</button>
+      <div class="dropdown" id="dropReport">
+        <button id="btnReport" class="btn primary" onclick="document.getElementById('menuReport').classList.toggle('open')">Generar informe ▾</button>
+        <div class="dropdown-menu" id="menuReport">
+          <button id="btnReportHTML">📄 Descargar HTML</button>
+          <button id="btnReportPDF">🖨️ Imprimir / PDF</button>
+          <button id="btnReportWord">📝 Descargar Word</button>
+        </div>
+      </div>
+      <button id="btnExportData" class="btn ghost">Exportar datos</button>
+      <button id="btnImportData" class="btn ghost">Importar datos</button>
+      <input type="file" id="inpImport" accept=".json" style="display:none" />
       <button id="btnHelp" class="btn ghost">Ayuda</button>
     </div>
   </header>
@@ -297,11 +335,13 @@
 
   <script defer src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js');
-      });
-    }
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#dropReport')) {
+        document.getElementById('menuReport')?.classList.remove('open');
+      }
+    });
+    // Splash screen
     window.addEventListener('load', () => {
       const splash = document.getElementById('splash');
       setTimeout(() => {
